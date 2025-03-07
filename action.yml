@@ -1,0 +1,42 @@
+name: Runway Build Uploader
+description: Upload a build to Runway.team's build distribution service
+author: JackoPlane
+
+branding:
+  icon: package
+  color: black
+
+inputs:
+  api-key:
+    description: Your Runway.team API key
+    required: true
+  org-id:
+    description: Runway organization ID
+    required: true
+  app-id:
+    description: Runway application ID
+    required: true
+  bucket-id:
+    description: Runway bucket ID
+    required: true
+  build-path:
+    description: Path to the build file to upload
+    required: true
+  tester-notes:
+    description: Notes to include with the build
+    required: false
+  additional-files:
+    description:
+      'A file, directory or wildcard pattern that describes what additional
+      files to upload'
+    required: false
+
+outputs:
+  install-url:
+    description: The install URL for the build
+  build-id:
+    description: The ID of the build
+
+runs:
+  using: node20
+  main: dist/index.js
