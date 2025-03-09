@@ -9,20 +9,25 @@ branding:
 
 # Define your inputs here.
 inputs:
-  apiKey:
+  api-key:
     description: Your Runway.team API key
     required: true
-  appId:
+  app-id:
     description: Runway application ID
     required: true
-  bucketId:
+  bucket-id:
     description: Runway bucket ID
     required: true
-  filePath:
+  build-path:
     description: Path to the build file to upload
     required: true
-  testerNotes:
+  tester-notes:
     description: Notes to include with the build
+    required: false
+  additional-files:
+    description:
+      'A file, directory or wildcard pattern that describes what additional
+      files to upload'
     required: false
 
 # Define your outputs here.

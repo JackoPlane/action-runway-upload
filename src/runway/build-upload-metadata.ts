@@ -1,7 +1,7 @@
 /**
- * Options for uploading a build
+ * Metadata for uploading a build
  */
-export interface UploadBuildOptions {
+export interface BuildUploadMetadata {
   /**
    * Optional tester notes to include with the build being uploaded
    */
