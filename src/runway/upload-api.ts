@@ -83,10 +83,7 @@ export class RunwayUploadApi {
 
     const formData = new FormData()
     formData.append('file', createReadStream(filePath), _fileName)
-
-    if (fileName) {
-      formData.append('data', JSON.stringify({ fileName }))
-    }
+    formData.append('data', JSON.stringify({ fileName: _fileName }))
 
     const response = await this.api.post(
       `/v1/app/${app}/bucket/${bucket}/build/${build}/additionalFiles`,

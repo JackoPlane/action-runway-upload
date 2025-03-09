@@ -61,7 +61,10 @@ async function lastGitCommitFormattedWith(
       '-1',
       `--pretty=${prettyFormat}`,
       dateFormat ? `--date=${dateFormat}` : undefined
-    ].filter(Boolean) as string[]
+    ].filter(Boolean) as string[],
+    {
+      silent: !core.isDebug()
+    }
   )
 
   if (command.exitCode !== 0) {

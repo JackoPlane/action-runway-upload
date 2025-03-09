@@ -39,7 +39,8 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/glob": "^0.5.0",
-    "axios": "^1.8.2"
+    "axios": "^1.8.2",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.7",
@@ -51,6 +52,7 @@
     "@rollup/plugin-typescript": "^12.1.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.17.24",
+    "@types/qrcode": "^1.5.5",
     "@typescript-eslint/eslint-plugin": "^8.26.0",
     "@typescript-eslint/parser": "^8.26.0",
     "eslint": "^9.22.0",

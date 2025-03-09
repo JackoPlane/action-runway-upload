@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import QRCode from 'qrcode'
 import { getInputs } from './utils/input-helper.js'
 import { UploadInputs } from './upload-inputs.js'
 import { findFilesToUpload } from './utils/file-search.js'
@@ -24,6 +25,13 @@ export async function run(): Promise<void> {
       inputs.additionalFiles
     )
   }
+
+  await printInstallDetails(
+    'org_nrumYfyI',
+    inputs.appId,
+    uploadedBuild.id,
+    inputs.bucketId
+  )
 }
 
 async function uploadBuild(api: RunwayUploadApi, inputs: UploadInputs) {
@@ -55,11 +63,35 @@ async function uploadAdditionalFiles(
       `Root additional files directory is ${searchResult.rootDirectory}`
     )
 
-    return await Promise.all(
-      searchResult.filesToUpload.map(
-        async (file) =>
-          await api.uploadAdditionalFileToBuild(appId, bucketId, buildId, file)
-      )
-    )
+    for (const file of searchResult.filesToUpload) {
+      await api.uploadAdditionalFileToBuild(appId, bucketId, buildId, file)
+    }
+
+    return
   }
+}
+
+async function printInstallDetails(
+  orgId: string,
+  appId: string,
+  buildId: string,
+  bucketId: string
+) {
+  const installUrl = `https://app.runway.team/dashboard/org/${orgId}/app/${appId}/builds?buildId=${buildId}&bucketId=${bucketId}`
+  const qrCode = await QRCode.toString(installUrl, {
+    type: 'terminal',
+    small: true
+  })
+
+  core.info('Runway Build')
+  core.info('=============')
+  core.info('')
+  core.info('Scan the QR code above to view the build in the Runway dashboard.')
+  core.info('')
+  for (const line of qrCode.split('\n')) {
+    core.info('\t' + line)
+  }
+  core.info('')
+  core.info(`Direct link: ${installUrl}`)
+  core.info('')
 }
