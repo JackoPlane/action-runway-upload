@@ -4,6 +4,10 @@ export interface UploadInputs {
    */
   apiKey: string
   /**
+   * The ID of the organization to upload the build to
+   */
+  orgId: string
+  /**
    * The ID of the app to upload the build to
    */
   appId: string

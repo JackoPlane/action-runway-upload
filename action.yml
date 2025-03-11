@@ -30,10 +30,11 @@ inputs:
       files to upload'
     required: false
 
-# Define your outputs here.
-# outputs:
-#   time:
-#     description: Your output description here
+outputs:
+  install-url:
+    description: The install URL for the build
+  build-id:
+    description: The ID of the build
 
 runs:
   using: node20

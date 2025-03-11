@@ -5,6 +5,7 @@ import { UploadInputs } from './upload-inputs.js'
 import { findFilesToUpload } from './utils/file-search.js'
 import { getBuildMetadata } from './utils/build-metadata.js'
 import { RunwayUploadApi } from './runway/upload-api.js'
+import { Outputs } from './constants.js'
 
 /**
  * Run the action
@@ -26,12 +27,17 @@ export async function run(): Promise<void> {
     )
   }
 
-  await printInstallDetails(
-    'org_nrumYfyI',
+  const installUrl = getInstallUrl(
+    inputs.orgId,
     inputs.appId,
     uploadedBuild.id,
     inputs.bucketId
   )
+
+  await printInstallDetails(installUrl)
+
+  core.setOutput(Outputs.InstallUrl, installUrl)
+  core.setOutput(Outputs.BuildId, uploadedBuild.id)
 }
 
 async function uploadBuild(api: RunwayUploadApi, inputs: UploadInputs) {
@@ -71,13 +77,24 @@ async function uploadAdditionalFiles(
   }
 }
 
-async function printInstallDetails(
+/**
+ * Get the install URL for the build
+ * @param orgId The ID of the organization
+ * @param appId The ID of the app
+ * @param buildId The ID of the build
+ * @param bucketId The ID of the bucket
+ * @returns The install URL for the build
+ */
+function getInstallUrl(
   orgId: string,
   appId: string,
   buildId: string,
   bucketId: string
-) {
-  const installUrl = `https://app.runway.team/dashboard/org/${orgId}/app/${appId}/builds?buildId=${buildId}&bucketId=${bucketId}`
+): string {
+  return `https://app.runway.team/dashboard/org/${orgId}/app/${appId}/builds?buildId=${buildId}&bucketId=${bucketId}`
+}
+
+async function printInstallDetails(installUrl: string) {
   const qrCode = await QRCode.toString(installUrl, {
     type: 'terminal',
     small: true
@@ -86,7 +103,7 @@ async function printInstallDetails(
   core.info('Runway Build')
   core.info('=============')
   core.info('')
-  core.info('Scan the QR code above to view the build in the Runway dashboard.')
+  core.info('Scan the QR code below to view the build in the Runway dashboard.')
   core.info('')
   for (const line of qrCode.split('\n')) {
     core.info('\t' + line)
