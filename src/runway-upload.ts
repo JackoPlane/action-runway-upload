@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import QRCode from 'qrcode'
 import { getInputs } from './utils/input-helper.js'
 import { UploadInputs } from './upload-inputs.js'
-import { findFilesToUpload } from './utils/file-search.js'
+import { findFilesToUpload, fileSize } from './utils/file-search.js'
 import { getBuildMetadata } from './utils/build-metadata.js'
 import { RunwayUploadApi } from './runway/upload-api.js'
 import { Outputs } from './constants.js'
@@ -16,6 +16,21 @@ export async function run(): Promise<void> {
   const runwayApi = new RunwayUploadApi(inputs.apiKey)
 
   const uploadedBuild = await uploadBuild(runwayApi, inputs)
+  
+  // Set build related outputs
+  core.setOutput(Outputs.BuildId, uploadedBuild.id)
+  core.setOutput(Outputs.BuildFileSize, fileSize(inputs.buildPath))
+
+  // Create an install URL for this build
+  const installUrl = getInstallUrl(
+    inputs.orgId,
+    inputs.appId,
+    uploadedBuild.id,
+    inputs.bucketId
+  )
+
+  // Set install URL output
+  core.setOutput(Outputs.InstallUrl, installUrl)
 
   if (inputs.additionalFiles) {
     await uploadAdditionalFiles(
@@ -27,17 +42,8 @@ export async function run(): Promise<void> {
     )
   }
 
-  const installUrl = getInstallUrl(
-    inputs.orgId,
-    inputs.appId,
-    uploadedBuild.id,
-    inputs.bucketId
-  )
-
+  // Display install details
   await printInstallDetails(installUrl)
-
-  core.setOutput(Outputs.InstallUrl, installUrl)
-  core.setOutput(Outputs.BuildId, uploadedBuild.id)
 }
 
 async function uploadBuild(api: RunwayUploadApi, inputs: UploadInputs) {
@@ -60,14 +66,18 @@ async function uploadAdditionalFiles(
     core.warning(
       `No files were found with the provided path: ${additionalFiles}. No additional files will be uploaded.`
     )
+
+    return
   } else {
-    const s = searchResult.filesToUpload.length === 1 ? '' : 's'
-    core.info(
-      `With the provided path, there will be ${searchResult.filesToUpload.length} file${s} uploaded`
-    )
-    core.debug(
-      `Root additional files directory is ${searchResult.rootDirectory}`
-    )
+    if (core.isDebug()) {
+      const s = searchResult.filesToUpload.length === 1 ? '' : 's'
+      core.info(
+        `With the provided path, there will be ${searchResult.filesToUpload.length} file${s} uploaded`
+      )
+      core.debug(
+        `Root additional files directory is ${searchResult.rootDirectory}`
+      )
+    }
 
     for (const file of searchResult.filesToUpload) {
       await api.uploadAdditionalFileToBuild(appId, bucketId, buildId, file)
@@ -100,8 +110,7 @@ async function printInstallDetails(installUrl: string) {
     small: true
   })
 
-  core.info('Runway Build')
-  core.info('=============')
+  core.startGroup('Build Installation Details')
   core.info('')
   core.info('Scan the QR code below to view the build in the Runway dashboard.')
   core.info('')
@@ -111,4 +120,5 @@ async function printInstallDetails(installUrl: string) {
   core.info('')
   core.info(`Direct link: ${installUrl}`)
   core.info('')
+  core.endGroup()
 }

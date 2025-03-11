@@ -1,16 +1,17 @@
-name: Runway.team Build Uploader
+name: Runway Build Uploader
 description: Upload a build to Runway.team's build distribution service
 author: JackoPlane
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: package
+  color: black
 
-# Define your inputs here.
 inputs:
   api-key:
     description: Your Runway.team API key
+    required: true
+  org-id:
+    description: Runway organization ID
     required: true
   app-id:
     description: Runway application ID

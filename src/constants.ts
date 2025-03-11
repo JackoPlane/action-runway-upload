@@ -16,5 +16,6 @@ export enum Inputs {
  */
 export enum Outputs {
   BuildId = 'build-id',
-  InstallUrl = 'install-url'
+  InstallUrl = 'install-url',
+  BuildFileSize = 'build-file-size'
 }
