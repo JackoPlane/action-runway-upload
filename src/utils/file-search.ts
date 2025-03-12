@@ -173,3 +173,8 @@ export async function findFilesToUpload(
     rootDirectory: searchPaths[0]
   }
 }
+
+export async function fileSize(filePath: string): Promise<number> {
+  const fileStats = await stats(filePath)
+  return fileStats.size
+}

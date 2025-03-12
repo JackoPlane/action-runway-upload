@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
 import FormData from 'form-data'
-import { createReadStream } from 'fs'
+import { createReadStream, writeFileSync } from 'fs'
 import { UploadInputs } from '../upload-inputs.js'
 import { BuildUploadMetadata } from './build-upload-metadata.js'
 
@@ -59,6 +59,8 @@ export class RunwayUploadApi {
     if (response.status !== 200) {
       console.error(response.data)
     }
+
+    writeFileSync('./artifacts/build-response.json', JSON.stringify(response.data))
 
     return response.data
   }
