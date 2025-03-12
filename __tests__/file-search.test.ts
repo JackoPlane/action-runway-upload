@@ -1,238 +1,408 @@
-// /**
-//  * Unit tests for the file search functionality, src/utils/file-search.ts
-//  */
-// import { jest } from '@jest/globals'
+import * as path from 'path'
+import * as io from '@actions/io'
+import { jest } from '@jest/globals'
+import {promises as fs} from 'fs'
+import {findFilesToUpload} from '../src/utils/file-search'
+import { fileURLToPath } from 'url'
 
-// // Define types for our mocks to fix TypeScript errors
-// type MockFn = ReturnType<typeof jest.fn>
-// type StatMock = { isDirectory: MockFn; size: number }
-// type FsMock = { promises: { stat: MockFn } }
-// type GlobberMock = { glob: MockFn; getSearchPaths: MockFn; globGenerator: MockFn }
-// type CoreMock = { debug: MockFn; info: MockFn; warning: MockFn; error: MockFn }
-// type GlobMock = { create: MockFn }
-// type PathMock = { sep: string; join: MockFn; normalize: MockFn; dirname: MockFn }
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-// // Create mock objects before mocking modules
-// const mockStat = {
-//   isDirectory: jest.fn().mockReturnValue(false),
-//   size: 1024
-// } as StatMock
+const root = path.join(__dirname, '_temp', 'search')
+const searchItem1Path = path.join(
+  root,
+  'folder-a',
+  'folder-b',
+  'folder-c',
+  'search-item1.txt'
+)
+const searchItem2Path = path.join(root, 'folder-d', 'search-item2.txt')
+const searchItem3Path = path.join(root, 'folder-d', 'search-item3.txt')
+const searchItem4Path = path.join(root, 'folder-d', 'search-item4.txt')
+const searchItem5Path = path.join(root, 'search-item5.txt')
+const extraSearchItem1Path = path.join(
+  root,
+  'folder-a',
+  'folder-b',
+  'folder-c',
+  'extraSearch-item1.txt'
+)
+const extraSearchItem2Path = path.join(
+  root,
+  'folder-d',
+  'extraSearch-item2.txt'
+)
+const extraSearchItem3Path = path.join(
+  root,
+  'folder-f',
+  'extraSearch-item3.txt'
+)
+const extraSearchItem4Path = path.join(
+  root,
+  'folder-h',
+  'folder-i',
+  'extraSearch-item4.txt'
+)
+const extraSearchItem5Path = path.join(
+  root,
+  'folder-h',
+  'folder-i',
+  'extraSearch-item5.txt'
+)
+const extraFileInFolderCPath = path.join(
+  root,
+  'folder-a',
+  'folder-b',
+  'folder-c',
+  'extra-file-in-folder-c.txt'
+)
+const amazingFileInFolderHPath = path.join(root, 'folder-h', 'amazing-item.txt')
+const lonelyFilePath = path.join(
+  root,
+  'folder-h',
+  'folder-j',
+  'folder-k',
+  'lonely-file.txt'
+)
 
-// const mockGlobber = {
-//   glob: jest.fn(),
-//   getSearchPaths: jest.fn(),
-//   globGenerator: jest.fn(function* () { yield* [] })
-// } as GlobberMock
+const hiddenFile = path.join(root, '.hidden-file.txt')
+const fileInHiddenFolderPath = path.join(
+  root,
+  '.hidden-folder',
+  'folder-in-hidden-folder',
+  'file.txt'
+)
+const fileInHiddenFolderInFolderA = path.join(
+  root,
+  'folder-a',
+  '.hidden-folder-in-folder-a',
+  'file.txt'
+)
 
-// const mockFs = {
-//   promises: {
-//     stat: jest.fn().mockResolvedValue(mockStat)
-//   }
-// } as FsMock
+describe('Search', () => {
+  beforeAll(async () => {
+    // mock all output so that there is less noise when running tests
+    jest.spyOn(console, 'log').mockImplementation(() => {})
 
-// const mockCore = {
-//   debug: jest.fn(),
-//   info: jest.fn(),
-//   warning: jest.fn(),
-//   error: jest.fn()
-// } as CoreMock
+    // clear temp directory
+    await io.rmRF(root)
+    await fs.mkdir(path.join(root, 'folder-a', 'folder-b', 'folder-c'), {
+      recursive: true
+    })
+    await fs.mkdir(path.join(root, 'folder-a', 'folder-b', 'folder-e'), {
+      recursive: true
+    })
+    await fs.mkdir(path.join(root, 'folder-d'), {
+      recursive: true
+    })
+    await fs.mkdir(path.join(root, 'folder-f'), {
+      recursive: true
+    })
+    await fs.mkdir(path.join(root, 'folder-g'), {
+      recursive: true
+    })
+    await fs.mkdir(path.join(root, 'folder-h', 'folder-i'), {
+      recursive: true
+    })
+    await fs.mkdir(path.join(root, 'folder-h', 'folder-j', 'folder-k'), {
+      recursive: true
+    })
 
-// const mockGlob = {
-//   create: jest.fn().mockResolvedValue(mockGlobber)
-// } as GlobMock
+    await fs.mkdir(
+      path.join(root, '.hidden-folder', 'folder-in-hidden-folder'),
+      {recursive: true}
+    )
+    await fs.mkdir(path.join(root, 'folder-a', '.hidden-folder-in-folder-a'), {
+      recursive: true
+    })
 
-// const mockPath = {
-//   sep: '/',
-//   join: jest.fn((...args: string[]) => args.join('/')),
-//   normalize: jest.fn((p: string) => p),
-//   dirname: jest.fn((p: string) => p.substring(0, p.lastIndexOf('/')))
-// } as PathMock
+    await fs.writeFile(searchItem1Path, 'search item1 file')
+    await fs.writeFile(searchItem2Path, 'search item2 file')
+    await fs.writeFile(searchItem3Path, 'search item3 file')
+    await fs.writeFile(searchItem4Path, 'search item4 file')
+    await fs.writeFile(searchItem5Path, 'search item5 file')
 
-// // Set up mocks
-// jest.unstable_mockModule('fs', () => (mockFs as unknown as typeof import('fs')))
-// jest.unstable_mockModule('@actions/glob', () => (mockGlob as unknown as typeof import('@actions/glob')))
-// jest.unstable_mockModule('@actions/core', () => (mockCore as unknown as typeof import('@actions/core')))
-// jest.unstable_mockModule('path', () => (mockPath as unknown as typeof import('path')))
+    await fs.writeFile(extraSearchItem1Path, 'extraSearch item1 file')
+    await fs.writeFile(extraSearchItem2Path, 'extraSearch item2 file')
+    await fs.writeFile(extraSearchItem3Path, 'extraSearch item3 file')
+    await fs.writeFile(extraSearchItem4Path, 'extraSearch item4 file')
+    await fs.writeFile(extraSearchItem5Path, 'extraSearch item5 file')
 
-// // Variable to hold the module under test after import
-// interface FileSearch {
-//   findFilesToUpload: (searchPath: string, includeHiddenFiles?: boolean) => Promise<{
-//     filesToUpload: string[],
-//     rootDirectory: string
-//   }>
-//   fileSize: (filePath: string) => Promise<number>
-// }
+    await fs.writeFile(extraFileInFolderCPath, 'extra file')
 
-// let fileSearch: FileSearch
+    await fs.writeFile(amazingFileInFolderHPath, 'amazing file')
 
-// beforeAll(async () => {
-//   // Import the module under test after setting up mocks
-//   fileSearch = await import('../src/utils/file-search')
-// })
+    await fs.writeFile(lonelyFilePath, 'all by itself')
 
-// describe('file-search', () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks()
-    
-//     // Reset mock states
-//     mockStat.isDirectory.mockReturnValue(false)
-//     mockStat.size = 1024
-//   })
+    await fs.writeFile(hiddenFile, 'hidden file')
+    await fs.writeFile(fileInHiddenFolderPath, 'file in hidden directory')
+    await fs.writeFile(fileInHiddenFolderInFolderA, 'file in hidden directory')
+    /*
+      Directory structure of files that get created:
+      root/
+          .hidden-folder/
+              folder-in-hidden-folder/
+                  file.txt
+          folder-a/
+              .hidden-folder-in-folder-a/
+                  file.txt
+              folder-b/
+                  folder-c/
+                      search-item1.txt
+                      extraSearch-item1.txt
+                      extra-file-in-folder-c.txt
+                  folder-e/
+          folder-d/
+              search-item2.txt
+              search-item3.txt
+              search-item4.txt
+              extraSearch-item2.txt
+          folder-f/
+              extraSearch-item3.txt
+          folder-g/
+          folder-h/
+              amazing-item.txt
+              folder-i/
+                  extraSearch-item4.txt
+                  extraSearch-item5.txt
+              folder-j/
+                  folder-k/
+                      lonely-file.txt
+          .hidden-file.txt
+          search-item5.txt
+    */
+  })
 
-//   describe('findFilesToUpload', () => {
-//     it('should find files with default options', async () => {
-//       // Setup
-//       const searchPath = 'test/*.txt'
-//       const mockFiles = [
-//         'test/file1.txt',
-//         'test/file2.txt'
-//       ]
-//       mockGlobber.glob.mockResolvedValue(mockFiles)
-//       mockGlobber.getSearchPaths.mockReturnValue(['test'])
+  it('Single file search - Absolute Path', async () => {
+    const searchResult = await findFilesToUpload(extraFileInFolderCPath)
+    expect(searchResult.filesToUpload.length).toEqual(1)
+    expect(searchResult.filesToUpload[0]).toEqual(extraFileInFolderCPath)
+    expect(searchResult.rootDirectory).toEqual(
+      path.join(root, 'folder-a', 'folder-b', 'folder-c')
+    )
+  })
 
-//       // Act
-//       const result = await fileSearch.findFilesToUpload(searchPath)
+  it('Single file search - Relative Path', async () => {
+    const relativePath = path.join(
+      '__tests__',
+      '_temp',
+      'search',
+      'folder-a',
+      'folder-b',
+      'folder-c',
+      'search-item1.txt'
+    )
 
-//       // Assert
-//       expect(mockGlob.create).toHaveBeenCalledWith(searchPath, {
-//         followSymbolicLinks: true,
-//         implicitDescendants: true,
-//         omitBrokenSymbolicLinks: true,
-//         excludeHiddenFiles: true
-//       })
-//       expect(mockGlobber.glob).toHaveBeenCalled()
-//       expect(mockGlobber.getSearchPaths).toHaveBeenCalled()
-//       expect(result).toEqual({
-//         filesToUpload: mockFiles,
-//         rootDirectory: 'test'
-//       })
-//     })
+    const searchResult = await findFilesToUpload(relativePath)
+    expect(searchResult.filesToUpload.length).toEqual(1)
+    expect(searchResult.filesToUpload[0]).toEqual(searchItem1Path)
+    expect(searchResult.rootDirectory).toEqual(
+      path.join(root, 'folder-a', 'folder-b', 'folder-c')
+    )
+  })
 
-//     it('should include hidden files when specified', async () => {
-//       // Setup
-//       const searchPath = 'test/*.txt'
-//       const mockFiles = [
-//         'test/.hidden.txt',
-//         'test/visible.txt'
-//       ]
-//       mockGlobber.glob.mockResolvedValue(mockFiles)
-//       mockGlobber.getSearchPaths.mockReturnValue(['test'])
+  it('Single file using wildcard', async () => {
+    const expectedRoot = path.join(root, 'folder-h')
+    const searchPath = path.join(root, 'folder-h', '**/*lonely*')
+    const searchResult = await findFilesToUpload(searchPath)
+    expect(searchResult.filesToUpload.length).toEqual(1)
+    expect(searchResult.filesToUpload[0]).toEqual(lonelyFilePath)
+    expect(searchResult.rootDirectory).toEqual(expectedRoot)
+  })
 
-//       // Act
-//       const result = await fileSearch.findFilesToUpload(searchPath, true)
+  it('Single file using directory', async () => {
+    const searchPath = path.join(root, 'folder-h', 'folder-j')
+    const searchResult = await findFilesToUpload(searchPath)
+    expect(searchResult.filesToUpload.length).toEqual(1)
+    expect(searchResult.filesToUpload[0]).toEqual(lonelyFilePath)
+    expect(searchResult.rootDirectory).toEqual(searchPath)
+  })
 
-//       // Assert
-//       expect(mockGlob.create).toHaveBeenCalledWith(searchPath, {
-//         followSymbolicLinks: true,
-//         implicitDescendants: true,
-//         omitBrokenSymbolicLinks: true,
-//         excludeHiddenFiles: false
-//       })
-//       expect(result.filesToUpload).toEqual(mockFiles)
-//     })
+  it('Directory search - Absolute Path', async () => {
+    const searchPath = path.join(root, 'folder-h')
+    const searchResult = await findFilesToUpload(searchPath)
+    expect(searchResult.filesToUpload.length).toEqual(4)
 
-//     it('should filter out directories', async () => {
-//       // Setup
-//       const searchPath = 'test/**'
-//       const mockFiles = [
-//         'test/file1.txt',
-//         'test/dir'
-//       ]
-//       mockGlobber.glob.mockResolvedValue(mockFiles)
-//       mockGlobber.getSearchPaths.mockReturnValue(['test'])
+    expect(
+      searchResult.filesToUpload.includes(amazingFileInFolderHPath)
+    ).toEqual(true)
+    expect(searchResult.filesToUpload.includes(extraSearchItem4Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem5Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(lonelyFilePath)).toEqual(true)
 
-//       // Setup directory check to return true for the directory path
-//       mockFs.promises.stat.mockImplementation((filePath: string) => {
-//         if (filePath === 'test/dir') {
-//           mockStat.isDirectory.mockReturnValue(true)
-//         } else {
-//           mockStat.isDirectory.mockReturnValue(false)
-//         }
-//         return Promise.resolve(mockStat)
-//       })
+    expect(searchResult.rootDirectory).toEqual(searchPath)
+  })
 
-//       // Act
-//       const result = await fileSearch.findFilesToUpload(searchPath)
+  it('Directory search - Relative Path', async () => {
+    const searchPath = path.join('__tests__', '_temp', 'search', 'folder-h')
+    const expectedRootDirectory = path.join(root, 'folder-h')
+    const searchResult = await findFilesToUpload(searchPath)
+    expect(searchResult.filesToUpload.length).toEqual(4)
 
-//       // Assert
-//       expect(result).toEqual({
-//         filesToUpload: ['test/file1.txt'],
-//         rootDirectory: 'test'
-//       })
-//     })
+    expect(
+      searchResult.filesToUpload.includes(amazingFileInFolderHPath)
+    ).toEqual(true)
+    expect(searchResult.filesToUpload.includes(extraSearchItem4Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem5Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(lonelyFilePath)).toEqual(true)
 
-//     it('should handle case-insensitive file overwrites', async () => {
-//       // Setup
-//       const searchPath = 'test/*.txt'
-//       const mockFiles = [
-//         'test/file.txt',
-//         'test/FILE.txt'
-//       ]
-//       mockGlobber.glob.mockResolvedValue(mockFiles)
-//       mockGlobber.getSearchPaths.mockReturnValue(['test'])
+    expect(searchResult.rootDirectory).toEqual(expectedRootDirectory)
+  })
 
-//       // Act
-//       const result = await fileSearch.findFilesToUpload(searchPath)
+  it('Wildcard search - Absolute Path', async () => {
+    const searchPath = path.join(root, '**/*[Ss]earch*')
+    const searchResult = await findFilesToUpload(searchPath)
+    expect(searchResult.filesToUpload.length).toEqual(10)
 
-//       // Assert
-//       expect(mockCore.info).toHaveBeenCalledWith(
-//         expect.stringContaining('case insensitive')
-//       )
-//       expect(result.filesToUpload).toHaveLength(2)
-//     })
+    expect(searchResult.filesToUpload.includes(searchItem1Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem2Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem3Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem4Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem5Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(extraSearchItem1Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem2Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem3Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem4Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem5Path)).toEqual(
+      true
+    )
 
-//     it('should find least common ancestor for multiple search paths', async () => {
-//       // Setup
-//       const searchPath = 'test/**/*'
-//       mockGlobber.glob.mockResolvedValue(['test/dir1/file1.txt', 'test/dir2/file2.txt'])
-//       mockGlobber.getSearchPaths.mockReturnValue(['test/dir1', 'test/dir2'])
+    expect(searchResult.rootDirectory).toEqual(root)
+  })
 
-//       // Act
-//       const result = await fileSearch.findFilesToUpload(searchPath)
+  it('Wildcard search - Relative Path', async () => {
+    const searchPath = path.join(
+      '__tests__',
+      '_temp',
+      'search',
+      '**/*[Ss]earch*'
+    )
+    const searchResult = await findFilesToUpload(searchPath)
+    expect(searchResult.filesToUpload.length).toEqual(10)
 
-//       // Assert
-//       expect(mockCore.info).toHaveBeenCalledWith(
-//         expect.stringContaining('Multiple search paths')
-//       )
-//       expect(result.rootDirectory).toBe('test')
-//     })
+    expect(searchResult.filesToUpload.includes(searchItem1Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem2Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem3Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem4Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem5Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(extraSearchItem1Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem2Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem3Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem4Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem5Path)).toEqual(
+      true
+    )
 
-//     it('should handle single file uploads', async () => {
-//       // Setup
-//       const singleFile = 'test/single.txt'
-//       mockGlobber.glob.mockResolvedValue([singleFile])
-//       mockGlobber.getSearchPaths.mockReturnValue([singleFile])
+    expect(searchResult.rootDirectory).toEqual(root)
+  })
 
-//       // Act
-//       const result = await fileSearch.findFilesToUpload(singleFile)
+  it('Multi path search - root directory', async () => {
+    const searchPath1 = path.join(root, 'folder-a')
+    const searchPath2 = path.join(root, 'folder-d')
 
-//       // Assert
-//       expect(result).toEqual({
-//         filesToUpload: [singleFile],
-//         rootDirectory: 'test'
-//       })
-//     })
-//   })
+    const searchPaths = searchPath1 + '\n' + searchPath2
+    const searchResult = await findFilesToUpload(searchPaths)
 
-//   describe('fileSize', () => {
-//     it('should return the file size', async () => {
-//       // Setup
-//       mockStat.size = 12345
+    expect(searchResult.rootDirectory).toEqual(root)
+    expect(searchResult.filesToUpload.length).toEqual(7)
+    expect(searchResult.filesToUpload.includes(searchItem1Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem2Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem3Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem4Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(extraSearchItem1Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem2Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraFileInFolderCPath)).toEqual(
+      true
+    )
+  })
 
-//       // Act
-//       const size = await fileSearch.fileSize('test/file.txt')
+  it('Multi path search - with exclude character', async () => {
+    const searchPath1 = path.join(root, 'folder-a')
+    const searchPath2 = path.join(root, 'folder-d')
+    const searchPath3 = path.join(root, 'folder-a', 'folder-b', '**/extra*.txt')
 
-//       // Assert
-//       expect(size).toBe(12345)
-//     })
+    // negating the third search path
+    const searchPaths = searchPath1 + '\n' + searchPath2 + '\n!' + searchPath3
+    const searchResult = await findFilesToUpload(searchPaths)
 
-//     it('should handle errors when getting file size', async () => {
-//       // Setup
-//       const testError = new Error('File not found')
-//       mockFs.promises.stat.mockRejectedValueOnce(testError)
+    expect(searchResult.rootDirectory).toEqual(root)
+    expect(searchResult.filesToUpload.length).toEqual(5)
+    expect(searchResult.filesToUpload.includes(searchItem1Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem2Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem3Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(searchItem4Path)).toEqual(true)
+    expect(searchResult.filesToUpload.includes(extraSearchItem2Path)).toEqual(
+      true
+    )
+  })
 
-//       // Act and Assert
-//       await expect(fileSearch.fileSize('nonexistent.txt')).rejects.toThrow()
-//     })
-//   })
-// })
+  it('Multi path search - non root directory', async () => {
+    const searchPath1 = path.join(root, 'folder-h', 'folder-i')
+    const searchPath2 = path.join(root, 'folder-h', 'folder-j', 'folder-k')
+    const searchPath3 = amazingFileInFolderHPath
+
+    const searchPaths = [searchPath1, searchPath2, searchPath3].join('\n')
+    const searchResult = await findFilesToUpload(searchPaths)
+
+    expect(searchResult.rootDirectory).toEqual(path.join(root, 'folder-h'))
+    expect(searchResult.filesToUpload.length).toEqual(4)
+    expect(
+      searchResult.filesToUpload.includes(amazingFileInFolderHPath)
+    ).toEqual(true)
+    expect(searchResult.filesToUpload.includes(extraSearchItem4Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(extraSearchItem5Path)).toEqual(
+      true
+    )
+    expect(searchResult.filesToUpload.includes(lonelyFilePath)).toEqual(true)
+  })
+
+  it('Hidden files ignored by default', async () => {
+    const searchPath = path.join(root, '**/*')
+    const searchResult = await findFilesToUpload(searchPath)
+
+    expect(searchResult.filesToUpload).not.toContain(hiddenFile)
+    expect(searchResult.filesToUpload).not.toContain(fileInHiddenFolderPath)
+    expect(searchResult.filesToUpload).not.toContain(
+      fileInHiddenFolderInFolderA
+    )
+  })
+
+  it('Hidden files included', async () => {
+    const searchPath = path.join(root, '**/*')
+    const searchResult = await findFilesToUpload(searchPath, true)
+
+    expect(searchResult.filesToUpload).toContain(hiddenFile)
+    expect(searchResult.filesToUpload).toContain(fileInHiddenFolderPath)
+    expect(searchResult.filesToUpload).toContain(fileInHiddenFolderInFolderA)
+  })
+})
