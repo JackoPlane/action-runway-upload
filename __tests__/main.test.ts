@@ -28,18 +28,30 @@ interface FileSearchResult {
 }
 
 // Mock dependencies
-const mockUploadBuild = jest.fn<(inputs: any, metadata: BuildMetadata) => Promise<UploadedBuild>>()
-const mockUploadAdditionalFileToBuild = jest.fn<(app: string, bucket: string, build: string, filePath: string) => Promise<any>>()
+const mockUploadBuild =
+  jest.fn<(inputs: any, metadata: BuildMetadata) => Promise<UploadedBuild>>()
+const mockUploadAdditionalFileToBuild =
+  jest.fn<
+    (
+      app: string,
+      bucket: string,
+      build: string,
+      filePath: string
+    ) => Promise<any>
+  >()
 const mockRunwayUploadApi = jest.fn().mockImplementation(() => ({
   uploadBuild: mockUploadBuild,
   uploadAdditionalFileToBuild: mockUploadAdditionalFileToBuild
 }))
 
 const mockGetInputs = jest.fn<() => any>()
-const mockFindFilesToUpload = jest.fn<(path: string, isRequired: boolean) => Promise<FileSearchResult>>()
+const mockFindFilesToUpload =
+  jest.fn<(path: string, isRequired: boolean) => Promise<FileSearchResult>>()
 const mockFileSize = jest.fn<(path: string) => string>()
-const mockGetBuildMetadata = jest.fn<(notes?: string) => Promise<BuildMetadata>>()
-const mockQRCodeToString = jest.fn<(text: string, options: any) => Promise<string>>()
+const mockGetBuildMetadata =
+  jest.fn<(notes?: string) => Promise<BuildMetadata>>()
+const mockQRCodeToString =
+  jest.fn<(text: string, options: any) => Promise<string>>()
 
 // Mocks should be declared before the module being tested is imported
 jest.unstable_mockModule('@actions/core', () => core)
@@ -91,7 +103,7 @@ describe('runway-upload.ts', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks()
-    
+
     // Set up default mock implementations
     mockGetInputs.mockReturnValue(mockInputs)
     mockFileSize.mockReturnValue('10.5 MB')
@@ -105,24 +117,32 @@ describe('runway-upload.ts', () => {
 
     // Verify RunwayUploadApi was instantiated with the API key
     expect(mockRunwayUploadApi).toHaveBeenCalledWith('test-api-key')
-    
+
     // Verify build metadata was fetched
     expect(mockGetBuildMetadata).toHaveBeenCalledWith('Test build notes')
-    
+
     // Verify build was uploaded
     expect(mockUploadBuild).toHaveBeenCalledWith(mockInputs, mockBuildMetadata)
-    
+
     // Verify outputs were set correctly
-    expect(core.setOutput).toHaveBeenNthCalledWith(1, Outputs.BuildId, 'build-123')
-    expect(core.setOutput).toHaveBeenNthCalledWith(2, Outputs.BuildFileSize, '10.5 MB')
-    
+    expect(core.setOutput).toHaveBeenNthCalledWith(
+      1,
+      Outputs.BuildId,
+      'build-123'
+    )
+    expect(core.setOutput).toHaveBeenNthCalledWith(
+      2,
+      Outputs.BuildFileSize,
+      '10.5 MB'
+    )
+
     // Verify install URL output
     expect(core.setOutput).toHaveBeenNthCalledWith(
-      3, 
-      Outputs.InstallUrl, 
+      3,
+      Outputs.InstallUrl,
       `https://app.runway.team/dashboard/org/org-123/app/app-456/builds?buildId=build-123&bucketId=bucket-789`
     )
-    
+
     // Verify QR code was generated
     expect(mockQRCodeToString).toHaveBeenCalledWith(
       `https://app.runway.team/dashboard/org/org-123/app/app-456/builds?buildId=build-123&bucketId=bucket-789`,
@@ -140,32 +160,38 @@ describe('runway-upload.ts', () => {
       additionalFiles: '/path/to/additional/files'
     }
     mockGetInputs.mockReturnValue(inputsWithAdditionalFiles)
-    
+
     // Mock the file search results
     mockFindFilesToUpload.mockResolvedValue({
-      filesToUpload: ['/path/to/additional/files/file1.txt', '/path/to/additional/files/file2.txt'],
+      filesToUpload: [
+        '/path/to/additional/files/file1.txt',
+        '/path/to/additional/files/file2.txt'
+      ],
       rootDirectory: '/path/to/additional/files'
     } as FileSearchResult)
-    
+
     await run()
-    
+
     // Verify findFilesToUpload was called
-    expect(mockFindFilesToUpload).toHaveBeenCalledWith('/path/to/additional/files', false)
-    
+    expect(mockFindFilesToUpload).toHaveBeenCalledWith(
+      '/path/to/additional/files',
+      false
+    )
+
     // Verify uploadAdditionalFileToBuild was called for each file
     expect(mockUploadAdditionalFileToBuild).toHaveBeenCalledTimes(2)
     expect(mockUploadAdditionalFileToBuild).toHaveBeenNthCalledWith(
-      1, 
-      'app-456', 
-      'bucket-789', 
-      'build-123', 
+      1,
+      'app-456',
+      'bucket-789',
+      'build-123',
       '/path/to/additional/files/file1.txt'
     )
     expect(mockUploadAdditionalFileToBuild).toHaveBeenNthCalledWith(
-      2, 
-      'app-456', 
-      'bucket-789', 
-      'build-123', 
+      2,
+      'app-456',
+      'bucket-789',
+      'build-123',
       '/path/to/additional/files/file2.txt'
     )
   })
@@ -177,33 +203,37 @@ describe('runway-upload.ts', () => {
       additionalFiles: '/path/to/non-existent/files'
     }
     mockGetInputs.mockReturnValue(inputsWithAdditionalFiles)
-    
+
     // Mock empty file search results
     mockFindFilesToUpload.mockResolvedValue({
       filesToUpload: [],
       rootDirectory: '/path/to/non-existent/files'
     } as FileSearchResult)
-    
+
     await run()
-    
+
     // Verify warning was issued
     expect(core.warning).toHaveBeenCalledWith(
       'No files were found with the provided path: /path/to/non-existent/files. No additional files will be uploaded.'
     )
-    
+
     // Verify uploadAdditionalFileToBuild was not called
     expect(mockUploadAdditionalFileToBuild).not.toHaveBeenCalled()
   })
 
   it('displays install details correctly', async () => {
     await run()
-    
+
     // Verify start/end group was called
     expect(core.startGroup).toHaveBeenCalledWith('Build Installation Details')
     expect(core.endGroup).toHaveBeenCalled()
-    
+
     // Verify info calls
-    expect(core.info).toHaveBeenCalledWith(expect.stringContaining('Scan the QR code below'))
-    expect(core.info).toHaveBeenCalledWith(expect.stringContaining('Direct link:'))
+    expect(core.info).toHaveBeenCalledWith(
+      expect.stringContaining('Scan the QR code below')
+    )
+    expect(core.info).toHaveBeenCalledWith(
+      expect.stringContaining('Direct link:')
+    )
   })
 })

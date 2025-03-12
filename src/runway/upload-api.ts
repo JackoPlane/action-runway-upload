@@ -60,7 +60,10 @@ export class RunwayUploadApi {
       console.error(response.data)
     }
 
-    writeFileSync('./artifacts/build-response.json', JSON.stringify(response.data))
+    writeFileSync(
+      './artifacts/build-response.json',
+      JSON.stringify(response.data)
+    )
 
     return response.data
   }

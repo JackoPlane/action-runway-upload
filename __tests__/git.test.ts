@@ -1,6 +1,6 @@
 /**
  * Basic unit tests for the git utility functions, src/utils/git.ts
- * 
+ *
  * These tests focus on the bare minimum without mocking exec functions,
  * so they will depend on the actual git repository state.
  */
@@ -12,7 +12,7 @@ describe('git.ts', () => {
     test('returns a properly structured GitCommit object when in a valid git repo', async () => {
       // This test assumes it's running in a valid git repository
       const commit = await getLastGitCommit()
-      
+
       // If we're in a valid git repo with commits, we should get a commit
       if (commit) {
         // Verify the structure of the GitCommit object
@@ -21,30 +21,32 @@ describe('git.ts', () => {
         expect(commit).toHaveProperty('message')
         expect(commit).toHaveProperty('commitHash')
         expect(commit).toHaveProperty('abbreviatedCommitHash')
-        
+
         // Check data types
         expect(typeof commit.author).toBe('string')
         expect(typeof commit.authorEmail).toBe('string')
         expect(typeof commit.message).toBe('string')
         expect(typeof commit.commitHash).toBe('string')
         expect(typeof commit.abbreviatedCommitHash).toBe('string')
-        
+
         // Verify the commit hash is a valid SHA-1 (40 characters for full hash)
         expect(commit.commitHash).toMatch(/^[0-9a-f]{40}$/)
-        
+
         // Verify abbreviated hash is a subset of the full hash
-        expect(commit.commitHash.startsWith(commit.abbreviatedCommitHash)).toBe(true)
+        expect(commit.commitHash.startsWith(commit.abbreviatedCommitHash)).toBe(
+          true
+        )
       } else {
         // If we're not in a valid git repo or have no commits, this test is skipped
         console.log('Test skipped: No git commits found in repository')
       }
     })
-    
+
     test('handles the case when git information cannot be retrieved', async () => {
       // Since we're not mocking, we can only run this as an integration test
       // that confirms the function returns either a valid object or null
       const commit = await getLastGitCommit()
-      
+
       // The function should either return a valid GitCommit object or null
       if (commit !== null) {
         expect(commit).toMatchObject({

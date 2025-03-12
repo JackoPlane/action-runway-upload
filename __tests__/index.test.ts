@@ -26,13 +26,13 @@ describe('index.ts', () => {
   it('calls run function successfully', async () => {
     // Set up the mock to resolve successfully
     mockRun.mockResolvedValue(undefined)
-    
+
     // Dynamic import of the module under test
     await import('../src/index.js')
-    
+
     // Verify run was called
     expect(mockRun).toHaveBeenCalledTimes(1)
-    
+
     // Verify setFailed was not called (no errors)
     expect(core.setFailed).not.toHaveBeenCalled()
   })
@@ -41,13 +41,13 @@ describe('index.ts', () => {
     // Set up the mock to throw an error
     const testError = new Error('Test error message')
     mockRun.mockRejectedValue(testError)
-    
+
     // Dynamic import of the module
     await import('../src/index.js')
-    
+
     // Verify run was called
     expect(mockRun).toHaveBeenCalledTimes(1)
-    
+
     // Verify setFailed was called with the error message
     expect(core.setFailed).toHaveBeenCalledWith('Test error message')
   })

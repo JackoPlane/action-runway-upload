@@ -6,8 +6,8 @@ import { Inputs } from '../src/constants.js'
 
 // Define interface for mocked core module to ensure type safety
 interface MockCore {
-  getInput: jest.Mock;
-  setSecret: jest.Mock;
+  getInput: jest.Mock
+  setSecret: jest.Mock
 }
 
 // Create mock for @actions/core
@@ -26,10 +26,10 @@ describe('input-helper.ts', () => {
   beforeEach(() => {
     // Reset all mocks before each test
     jest.resetAllMocks()
-    
+
     // Set up default mock responses
     mockCore.getInput.mockImplementation((name) => {
-      const inputName = String(name);
+      const inputName = String(name)
       const mockInputs: Record<string, string> = {
         [Inputs.ApiKey]: 'test-api-key',
         [Inputs.OrgId]: 'test-org-id',
@@ -39,7 +39,7 @@ describe('input-helper.ts', () => {
         [Inputs.TesterNotes]: 'test-tester-notes',
         [Inputs.AdditionalFiles]: 'file1.txt,file2.txt'
       }
-      
+
       return mockInputs[inputName] || ''
     })
   })
@@ -47,7 +47,7 @@ describe('input-helper.ts', () => {
   it('gets all inputs correctly', () => {
     // Act
     const inputs = getInputs()
-    
+
     // Assert
     expect(inputs.apiKey).toBe('test-api-key')
     expect(inputs.orgId).toBe('test-org-id')
@@ -56,16 +56,26 @@ describe('input-helper.ts', () => {
     expect(inputs.buildPath).toBe('test-build-path')
     expect(inputs.testerNotes).toBe('test-tester-notes')
     expect(inputs.additionalFiles).toBe('file1.txt,file2.txt')
-    
+
     // Verify core.getInput was called with the correct parameters
-    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.ApiKey, { required: true })
-    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.OrgId, { required: true })
-    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.AppId, { required: true })
-    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.BucketId, { required: true })
-    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.BuildPath, { required: true })
+    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.ApiKey, {
+      required: true
+    })
+    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.OrgId, {
+      required: true
+    })
+    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.AppId, {
+      required: true
+    })
+    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.BucketId, {
+      required: true
+    })
+    expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.BuildPath, {
+      required: true
+    })
     expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.TesterNotes)
     expect(mockCore.getInput).toHaveBeenCalledWith(Inputs.AdditionalFiles)
-    
+
     // Verify the API key is marked as a secret
     expect(mockCore.setSecret).toHaveBeenCalledWith('test-api-key')
   })
@@ -73,7 +83,7 @@ describe('input-helper.ts', () => {
   it('handles missing optional inputs', () => {
     // Arrange
     mockCore.getInput.mockImplementation((name) => {
-      const inputName = String(name);
+      const inputName = String(name)
       const mockInputs: Record<string, string> = {
         [Inputs.ApiKey]: 'test-api-key',
         [Inputs.OrgId]: 'test-org-id',
@@ -82,13 +92,13 @@ describe('input-helper.ts', () => {
         [Inputs.BuildPath]: 'test-build-path'
         // No tester notes or additional files
       }
-      
+
       return mockInputs[inputName] || ''
     })
-    
+
     // Act
     const inputs = getInputs()
-    
+
     // Assert
     expect(inputs.apiKey).toBe('test-api-key')
     expect(inputs.orgId).toBe('test-org-id')

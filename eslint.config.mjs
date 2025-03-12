@@ -76,6 +76,15 @@ export default [
       'no-shadow': 'off',
       'no-unused-vars': 'off',
       'prettier/prettier': 'error'
-    }
+    },
+    overrides: [
+      {
+        files: ['__tests__/*'],
+        rules: {
+          'jest/no-conditional-expect': 'off',
+          '@typescript-eslint/no-explicit-any': 'off'
+        }
+      }
+    ]
   }
 ]

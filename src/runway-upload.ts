@@ -16,7 +16,7 @@ export async function run(): Promise<void> {
   const runwayApi = new RunwayUploadApi(inputs.apiKey)
 
   const uploadedBuild = await uploadBuild(runwayApi, inputs)
-  
+
   // Set build related outputs
   core.setOutput(Outputs.BuildId, uploadedBuild.id)
   core.setOutput(Outputs.BuildFileSize, fileSize(inputs.buildPath))

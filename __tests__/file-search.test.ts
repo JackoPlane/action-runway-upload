@@ -1,8 +1,8 @@
 import * as path from 'path'
 import * as io from '@actions/io'
 import { jest } from '@jest/globals'
-import {promises as fs} from 'fs'
-import {findFilesToUpload} from '../src/utils/file-search'
+import { promises as fs } from 'fs'
+import { findFilesToUpload } from '../src/utils/file-search'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -110,7 +110,7 @@ describe('Search', () => {
 
     await fs.mkdir(
       path.join(root, '.hidden-folder', 'folder-in-hidden-folder'),
-      {recursive: true}
+      { recursive: true }
     )
     await fs.mkdir(path.join(root, 'folder-a', '.hidden-folder-in-folder-a'), {
       recursive: true
