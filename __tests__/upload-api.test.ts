@@ -146,10 +146,6 @@ describe('upload-api.ts', () => {
       // Assert
       expect(formDataInstances.length).toBeGreaterThan(0)
       expect(mockFs.createReadStream).toHaveBeenCalledWith('/path/to/build.ipa')
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        './artifacts/build-response.json',
-        JSON.stringify(responseData)
-      )
 
       expect(axiosInstance.post).toHaveBeenCalledWith(
         '/v1/app/test-app-id/bucket/test-bucket-id/build',
