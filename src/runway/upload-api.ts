@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
 import FormData from 'form-data'
-import { createReadStream, writeFileSync } from 'fs'
+import { createReadStream } from 'fs'
 import { UploadInputs } from '../upload-inputs.js'
 import { BuildUploadMetadata } from './build-upload-metadata.js'
 

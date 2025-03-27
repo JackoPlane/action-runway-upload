@@ -1,6 +1,6 @@
 import require$$0$1 from 'os';
 import require$$0$2 from 'crypto';
-import require$$1, { stat, createReadStream, writeFileSync } from 'fs';
+import require$$1, { stat, createReadStream } from 'fs';
 import * as path from 'path';
 import path__default, { dirname } from 'path';
 import require$$2$1 from 'http';
@@ -60449,7 +60449,6 @@ class RunwayUploadApi {
         if (response.status !== 200) {
             console.error(response.data);
         }
-        writeFileSync('./artifacts/build-response.json', JSON.stringify(response.data));
         return response.data;
     }
     /**
